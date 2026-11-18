@@ -1,0 +1,395 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0c0e12;
+  --color-ink-raised: #12151b;
+  --color-bone: #eae4d8;
+  --color-bone-dim: #a8a49a;
+  --color-marigold: #d89a3c;
+  --color-line: #2a2e35;
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-sans: "Archivo Variable", "Archivo", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-ink);
+    color: var(--color-bone);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line) transparent;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* Lenis owns the scroll when enabled; the fallback is native smooth. */
+    html.lenis-smooth {
+      scroll-behavior: auto !important;
+    }
+
+    html.lenis {
+      height: auto;
+    }
+
+    html.lenis body {
+      height: auto;
+    }
+
+    .lenis.lenis-smooth {
+      scroll-behavior: auto !important;
+    }
+
+    .lenis.lenis-stopped {
+      overflow: hidden;
+    }
+  }
+
+  body {
+    margin: 0;
+    min-height: 100svh;
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background-color: var(--color-marigold);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-marigold);
+    outline-offset: 4px;
+  }
+
+  a[href],
+  button:not(:disabled),
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@layer components {
+  .page-x {
+    padding-inline: clamp(1.25rem, 5vw, 5rem);
+  }
+
+  .meta {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.45;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .skip-link {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 100;
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background-color: var(--color-marigold);
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    font-weight: 600;
+    transform: translateY(-200%);
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+
+  .photo {
+    background-color: var(--color-ink-raised);
+    /* Sepia over grayscale pulls photos toward the bone/marigold palette. */
+    filter: grayscale(1) sepia(0.14) brightness(0.92) contrast(1.05);
+  }
+
+  /* Darkroom: a print sits in the tray before it is exposed, so a photo that
+     has not been seen starts near-black and blurred, then resolves to its
+     full tone the moment it scrolls into view. is-undeveloped is dropped
+     once the develop transition finishes, so later filter changes keep their
+     own shorter transition. */
+  .photo.is-undeveloped {
+    filter: grayscale(1) sepia(0.2) brightness(0.06) contrast(1.05) blur(10px);
+    transition: filter 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .photo.is-developed {
+    filter: grayscale(1) sepia(0.14) brightness(0.92) contrast(1.05);
+  }
+
+  /* Viewfinder: marigold corner brackets and a centre crosshair lift over a
+     photo on hover — the single gesture that says "look through this".
+     Pure CSS, no extra markup beyond the frame class. */
+  .viewfinder-frame {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .viewfinder-frame::after {
+    content: '';
+    position: absolute;
+    inset: 0.8rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background:
+      linear-gradient(var(--color-marigold), var(--color-marigold)) left top / 20px 1.5px no-repeat,
+      linear-gradient(var(--color-marigold), var(--color-marigold)) left top / 1.5px 20px no-repeat,
+      linear-gradient(var(--color-marigold), var(--color-marigold)) right top / 20px 1.5px no-repeat,
+      linear-gradient(var(--color-marigold), var(--color-marigold)) right top / 1.5px 20px no-repeat,
+      linear-gradient(var(--color-marigold), var(--color-marigold)) left bottom / 20px 1.5px no-repeat,
+      linear-gradient(var(--color-marigold), var(--color-marigold)) left bottom / 1.5px 20px no-repeat,
+      linear-gradient(var(--color-marigold), var(--color-marigold)) right bottom / 20px 1.5px no-repeat,
+      linear-gradient(var(--color-marigold), var(--color-marigold)) right bottom / 1.5px 20px no-repeat,
+      linear-gradient(to bottom, transparent calc(50% - 0.5px), var(--color-marigold) calc(50% - 0.5px), var(--color-marigold) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+      linear-gradient(to right, transparent calc(50% - 0.5px), var(--color-marigold) calc(50% - 0.5px), var(--color-marigold) calc(50% + 0.5px), transparent calc(50% + 0.5px));
+  }
+
+  .viewfinder-frame:hover::after,
+  .viewfinder-frame:focus-within::after {
+    opacity: 1;
+  }
+
+  /* Touch devices emulate hover, which would leave the crosshair stuck on
+     every photo the reader taps. Keep the frame clean on coarse pointers. */
+  @media (pointer: coarse) {
+    .viewfinder-frame::after {
+      display: none;
+    }
+  }
+
+  /* Portrait sizing lives here, not in utilities, so the short-viewport
+     media rules further down can step it down and hide it deterministically. */
+  .hero-portrait {
+    height: min(50vh, 29rem);
+  }
+
+  .hero-portrait-frame {
+    border: 1px solid var(--color-line);
+  }
+
+  .work-thumb {
+    transition:
+      filter 0.5s ease,
+      transform 0.5s ease;
+  }
+
+  .work-row:hover .work-thumb,
+  .work-row:focus-within .work-thumb {
+    filter: grayscale(1) sepia(0.28) brightness(1.02) contrast(1.04);
+    transform: scale(1.02);
+  }
+
+  .timeline-rail {
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 88%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 88%, transparent 100%);
+  }
+
+  .menu-toggle,
+  .reel-control {
+    min-height: 2.75rem;
+    border: 1px solid var(--color-line);
+    padding-inline: 0.8rem;
+    color: var(--color-bone);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition:
+      color 180ms ease,
+      background-color 180ms ease,
+      border-color 180ms ease;
+  }
+
+  .menu-toggle:hover,
+  .reel-control:hover {
+    border-color: var(--color-marigold);
+    background-color: var(--color-marigold);
+    color: var(--color-ink);
+  }
+
+  .menu-toggle:active,
+  .reel-control:active {
+    border-color: var(--color-bone);
+    background-color: var(--color-bone);
+    color: var(--color-ink);
+  }
+
+  .work-panel {
+    will-change: transform;
+  }
+
+  .work-row {
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease;
+  }
+
+  .work-row:hover,
+  .work-row:focus-within {
+    background-color: color-mix(in srgb, var(--color-ink-raised) 55%, transparent);
+  }
+
+  .work-row:focus-within {
+    outline: 2px solid var(--color-marigold);
+    outline-offset: 4px;
+  }
+
+  /* Mounted anew when the pinned Path scroll changes stops. */
+  .path-detail {
+    animation: fadeUp 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    opacity: 0;
+  }
+
+  /* The stop heading rises each time the rail reaches a new node. */
+  .path-stop-in {
+    animation: fadeUp 480ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Unlayered so the short-viewport rules win over the md:block utility. */
+@media (min-width: 768px) and (max-height: 840px) {
+  .hero-portrait {
+    height: min(38vh, 21rem);
+  }
+}
+
+@media (min-width: 768px) and (max-height: 780px) {
+  .hero-portrait-figure {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-portrait-figure {
+    width: min(78vw, 20rem);
+  }
+
+  .hero-portrait-frame {
+    clip-path: none !important;
+  }
+
+  .hero-portrait {
+    height: clamp(16rem, 49svh, 24rem);
+    width: 100%;
+  }
+}
+
+/* Cursor photo preview: hidden by default, shown only on hover-capable pointers. */
+.info-hover-photo {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .info-hover-photo {
+    display: block;
+  }
+
+  #info [data-info-image] {
+    cursor: crosshair;
+  }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 56s linear infinite;
+}
+
+.marquee[data-paused="true"] .marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+
+  .u-line {
+    transition: none;
+  }
+
+  .work-row:hover .work-thumb,
+  .work-row:focus-within .work-thumb {
+    transform: none;
+  }
+
+  .work-thumb {
+    transition: none;
+  }
+
+  .viewfinder-frame::after {
+    transition: none;
+  }
+}
+
+/* Print: reveal every element, strip the fixed chrome, and show the real
+   contact addresses once the footer rows become anchors. */
+@media print {
+  html {
+    background-color: #fff;
+    color: #0c0e12;
+  }
+
+  body {
+    background-color: #fff;
+  }
+
+  [data-reveal-item],
+  [data-word],
+  [data-letter] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  header,
+  .marquee,
+  .marquee-track,
+  .info-hover-photo,
+  .reel-control,
+  .menu-toggle,
+  .skip-link,
+  #scroll-progress {
+    display: none !important;
+  }
+
+  .photo {
+    filter: none;
+  }
+
+  .photo.is-undeveloped,
+  .photo.is-developed {
+    filter: none;
+  }
+
+  a[href]::after {
+    content: ' (' attr(href) ')';
+  }
+}
