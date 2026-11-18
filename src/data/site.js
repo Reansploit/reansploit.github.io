@@ -39,7 +39,7 @@ export const site = {
       {
         label: 'Focus',
         value: 'Thalabul Ilmi',
-        image: 'images/photo-info-focus.jpg',
+        image: 'images/tb.jpg',
         imageAlt: 'just Study',
       },
       {
@@ -51,13 +51,13 @@ export const site = {
       {
         label: 'Based in',
         value: 'Tuban, Indonesia (GMT+7)',
-        image: 'images/photo-info-city.jpg',
+        image: 'images/tuban.jpeg',
         imageAlt: 'My City',
       },
       {
         label: 'Off-screen',
         value: 'me when gabut',
-        image: 'images/photo-info-now.png',
+        image: 'images/gabut.jpg',
         imageAlt: "don't look",
       },
     ],
