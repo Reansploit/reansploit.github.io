@@ -125,6 +125,7 @@
   }
   .photo.is-developed {
     filter: grayscale(1) sepia(0.14) brightness(0.92) contrast(1.05);
+    transition: filter 0.9s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   /* Viewfinder: marigold corner brackets and a centre crosshair lift over a
@@ -275,23 +276,29 @@
   }
 }
 
-@media (min-width: 768px) and (max-height: 780px) {
-  .hero-portrait-figure {
-    display: none;
-  }
-}
-
 @media (max-width: 767px) {
+  /* The opening shot runs edge to edge on a phone. The portrait is the first
+     thing the eye lands on after the meta row, so it reads as the page's
+     opening frame instead of an inset thumbnail. Negative margin cancels the
+     section's own inline padding so the crop meets both screen edges. */
   .hero-portrait-figure {
-    width: min(78vw, 20rem);
+    justify-self: start;
+    width: 100vw;
+    margin-left: calc(-1 * clamp(1.25rem, 5vw, 5rem));
+  }
+
+  .hero-portrait-figure figcaption {
+    padding-inline: clamp(1.25rem, 5vw, 5rem);
   }
 
   .hero-portrait-frame {
     clip-path: none !important;
+    border-left: 0;
+    border-right: 0;
   }
 
   .hero-portrait {
-    height: clamp(16rem, 49svh, 24rem);
+    height: clamp(18rem, 50svh, 26rem);
     width: 100%;
   }
 }
@@ -350,6 +357,97 @@
   }
 }
 
+/* Page tour rail: one hairline down the left margin, one node per stop,
+   a marigold dot that rides the whole page's scroll progress. */
+.guide-dot {
+  transition:
+    top 0.15s ease-out,
+    left 0.15s ease-out;
+}
+
+.guide-node {
+  border-width: 1px;
+  border-style: solid;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.guide-stop[aria-current="true"] .guide-node {
+  background-color: var(--color-marigold);
+  border-color: var(--color-marigold);
+  transform: scale(1.4);
+}
+
+.guide-pulse {
+  position: absolute;
+  inset: 0;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--color-marigold);
+  border-radius: 9999px;
+  animation: guide-pulse 2s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes guide-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  to {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+
+.guide-label {
+  position: absolute;
+  top: 50%;
+  left: 1rem;
+  transform: translate(-4px, -50%);
+  opacity: 0;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+  white-space: nowrap;
+}
+
+.guide-stop[aria-current="true"] .guide-label {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .guide-stop:hover .guide-label,
+  .guide-stop:focus-visible .guide-label {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-dot {
+    transition: none;
+  }
+
+  .guide-pulse {
+    animation: none;
+    display: none;
+  }
+
+  .guide-node {
+    transition: none;
+  }
+
+  .guide-stop .guide-label {
+    transition: none;
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
+
 /* Print: reveal every element, strip the fixed chrome, and show the real
    contact addresses once the footer rows become anchors. */
 @media print {
@@ -377,6 +475,12 @@
   .menu-toggle,
   .skip-link,
   #scroll-progress {
+    display: none !important;
+  }
+
+  .guide-rail,
+  .guide-stop,
+  .guide-dot {
     display: none !important;
   }
 

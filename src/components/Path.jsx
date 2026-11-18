@@ -12,7 +12,7 @@ import { useDevelopingPhoto } from '../lib/useDevelopingPhoto'
 // first time it scrolls into view. The pinned crossfade stack stays fully
 // exposed — it is already in frame.
 function PathPhoto({ src, alt, className }) {
-  const ref = useDevelopingPhoto()
+  const ref = useDevelopingPhoto({ tap: true })
   return (
     <div className={`viewfinder-frame ${className}`}>
       <img
@@ -169,7 +169,7 @@ export default function Path({ data }) {
               ? 'scale-100 border border-dashed border-marigold bg-ink'
               : 'scale-100 bg-marigold/40'
         }`
-      : `absolute -left-8 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full sm:-left-10 ${
+      : `absolute -left-8 top-2 h-4 w-4 -translate-x-1/2 rounded-full sm:-left-10 ${
           isTarget ? 'border border-dashed border-marigold bg-ink' : 'bg-marigold'
         }`
 
@@ -232,7 +232,9 @@ export default function Path({ data }) {
                   <li
                     key={node.title}
                     data-reveal-item
-                    className={`relative ${pinned ? 'border-b border-line py-4 last:border-b-0' : ''}`}
+                    className={`relative ${
+                      pinned ? 'border-b border-line py-4 last:border-b-0' : 'pb-8 last:pb-0'
+                    }`}
                   >
                     <span
                       aria-hidden="true"

@@ -3,10 +3,11 @@ import { Reveal } from './Reveal'
 import { useReducedMotion } from '../lib/useReducedMotion'
 import { useDevelopingPhoto } from '../lib/useDevelopingPhoto'
 import { driftImage } from '../lib/scroll'
+import { storyCamera } from '../lib/camera'
 
 export default function ImageBand({ data }) {
   const bandRef = useRef(null)
-  const imgRef = useDevelopingPhoto()
+  const imgRef = useDevelopingPhoto({ tap: true })
   const reduced = useReducedMotion()
 
   useLayoutEffect(() => {
@@ -15,10 +16,19 @@ export default function ImageBand({ data }) {
     return driftImage(imgRef.current, bandRef.current)
   }, [reduced])
 
+  // The band is the wide shot of the take: it settles in as the statement
+  // leaves and drifts out as the path rail begins.
+  useLayoutEffect(() => {
+    if (reduced) return
+    if (!bandRef.current) return
+    return storyCamera(bandRef.current)
+  }, [reduced])
+
   return (
-    <figure className="relative">
+    <figure id="band" className="relative">
       <div
         ref={bandRef}
+        data-shot
         className="relative h-[clamp(15rem,48vw,38rem)] overflow-hidden"
       >
         <div className="viewfinder-frame absolute inset-0">

@@ -1,9 +1,10 @@
 import { useLayoutEffect, useRef } from 'react'
-import { createTimeline, stagger } from 'animejs'
+import { animate } from 'motion'
 import gsap from 'gsap'
 import { useReducedMotion } from '../lib/useReducedMotion'
 import { useDevelopingPhoto } from '../lib/useDevelopingPhoto'
 import { driftHero, driftPortrait } from '../lib/scroll'
+import { storyCamera } from '../lib/camera'
 
 export default function Hero({ data }) {
   const sectionRef = useRef(null)
@@ -53,27 +54,27 @@ export default function Hero({ data }) {
       el.style.transform = ''
     }
 
-    const timeline = createTimeline({ defaults: { ease: 'out(3)' } })
-    timeline
-      .add(meta, { opacity: 1, translateY: 0, duration: 600 })
-      .add(
-        wordSpans,
-        { opacity: [0, 1], translateY: [36, 0], duration: 720, delay: stagger(40) },
-        260,
-      )
-      .add(
+    const EASE = [0.22, 1, 0.36, 1]
+    const run = (target, keyframes, options = {}) =>
+      animate(target, keyframes, { ease: EASE, ...options })
+    const runs = [
+      run(meta, { opacity: 1, translateY: 0 }, { duration: 0.6 }),
+      run(wordSpans, { opacity: [0, 1], translateY: [36, 0] }, {
+        duration: 0.72,
+        delay: (i) => 0.26 + i * 0.04,
+      }),
+      run(
         letters,
         {
           opacity: [0, 1],
           translateY: ['175%', '0%'],
           scaleY: [1.4, 1],
-          duration: 1000,
-          delay: stagger(28),
         },
-        520,
-      )
-      .add(hairline, { scaleX: [0, 1], duration: 1200 }, 980)
-      .add(cta, { opacity: 1, translateY: 0, duration: 600 }, 1180)
+        { duration: 1, delay: (i) => 0.52 + i * 0.028 },
+      ),
+      run(hairline, { scaleX: [0, 1] }, { duration: 1.2, delay: 0.98 }),
+      run(cta, { opacity: 1, translateY: 0 }, { duration: 0.6, delay: 1.18 }),
+    ]
 
     // The name letters answer hover only after the intro has finished, so
     // the hover transform never fights the entrance.
@@ -81,7 +82,7 @@ export default function Hero({ data }) {
 
     return () => {
       clearTimeout(done)
-      timeline.revert()
+      runs.forEach((animation) => animation.cancel())
       reset(meta)
       reset(cta)
       hairline.style.transform = ''
@@ -214,10 +215,19 @@ export default function Hero({ data }) {
     }
   }, [reduced])
 
+  // The hero is the opening shot of the page's single take: it settles into
+  // frame at load, then drifts up as the next shot arrives.
+  useLayoutEffect(() => {
+    if (reduced) return
+    if (!sectionRef.current) return
+    return storyCamera(sectionRef.current)
+  }, [reduced])
+
   return (
     <section
       ref={sectionRef}
       id="top"
+      data-shot
       className="page-x relative flex min-h-[100svh] flex-col justify-between pb-8 pt-24 sm:pb-10 sm:pt-24"
     >
       <div
@@ -268,7 +278,7 @@ export default function Hero({ data }) {
 
         <figure
           ref={figureRef}
-          className="hero-portrait-figure relative order-first w-full justify-self-center md:order-2 md:-mr-[clamp(1.25rem,5vw,5rem)] md:w-fit md:justify-self-end md:border-l md:border-line"
+          className="hero-portrait-figure relative order-first w-full justify-self-center md:order-2 md:w-fit md:justify-self-end md:border-l md:border-line"
         >
           <div
             ref={frameRef}
@@ -286,7 +296,7 @@ export default function Hero({ data }) {
               className="hero-portrait photo aspect-[4/5] w-auto object-cover"
             />
           </div>
-          <figcaption className="meta mt-4 flex items-center gap-3 text-bone-dim md:justify-end md:pr-[clamp(1.25rem,5vw,5rem)]">
+          <figcaption className="meta mt-4 flex items-center gap-3 text-bone-dim md:justify-end">
             {data.portraitCaption}
           </figcaption>
         </figure>

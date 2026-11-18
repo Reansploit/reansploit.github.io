@@ -16,6 +16,11 @@ export default function WorkIndex({ data }) {
   const reduced = useReducedMotion()
   const wide = useMediaQuery('(min-width: 1024px)')
   const horizontal = wide && !reduced
+  // Below the desktop breakpoint the same reel survives as a native
+  // horizontal scroller with snap points. A phone should not get the plain
+  // vertical stack the desktop fallback uses: the sideways reel is the
+  // section's identity, so it keeps that identity at thumb width too.
+  const reel = !wide && !reduced
   const items = data.items
   const hasWork = items.length > 0
   const activeItem = items[activeIndex]
@@ -28,7 +33,11 @@ export default function WorkIndex({ data }) {
     <article
       key={item.title}
       className={`work-row work-panel group ${
-        horizontal ? 'lg:w-[min(74vw,54rem)] lg:shrink-0' : ''
+        horizontal
+          ? 'lg:w-[min(74vw,54rem)] lg:shrink-0'
+          : reel
+            ? 'w-[85vw] max-w-[26rem] shrink-0 snap-start'
+            : ''
       }`}
     >
       <div
@@ -136,20 +145,69 @@ export default function WorkIndex({ data }) {
     })
   }, [activeIndex, horizontal, hasWork])
 
-  // Arrow keys drive the pinned track, matching the motion promised in
+  // The mobile reel mirrors the pinned rail's job through a native horizontal
+  // scroller: scroll events drive the progress bar and pick the nearest panel
+  // as the current one, exactly like the pinned track's onProgress.
+  useLayoutEffect(() => {
+    if (!reel || !hasWork) return
+    const track = trackRef.current
+    if (!track) return
+    const panels = Array.from(track.querySelectorAll('.work-panel'))
+    if (!panels.length) return
+
+    let frame = 0
+    const onScroll = () => {
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        const max = track.scrollWidth - track.clientWidth
+        const progress = max > 0 ? Math.min(1, Math.max(0, track.scrollLeft / max)) : 0
+        if (barRef.current) barRef.current.style.transform = `scaleX(${progress})`
+        const pad = parseFloat(getComputedStyle(track).scrollPaddingLeft) || 0
+        const edge = track.getBoundingClientRect().left + pad
+        let nearest = 0
+        let best = Infinity
+        panels.forEach((panel, i) => {
+          const distance = Math.abs(panel.getBoundingClientRect().left - edge)
+          if (distance < best) {
+            best = distance
+            nearest = i
+          }
+        })
+        if (nearest !== indexRef.current) {
+          indexRef.current = nearest
+          setActiveIndex(nearest)
+        }
+      })
+    }
+    onScroll()
+    track.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      cancelAnimationFrame(frame)
+      track.removeEventListener('scroll', onScroll)
+    }
+  }, [reel, hasWork, items.length])
+
+  // Arrow keys drive the current reel, matching the motion promised in
   // DESIGN.md. Home and End jump to the ends; the new panel's heading is
   // announced by moving focus there.
   useEffect(() => {
-    if (!horizontal || !hasWork) return
+    if ((!horizontal && !reel) || !hasWork) return
     const onKeyDown = (event) => {
-      if (event.key === 'ArrowLeft') { event.preventDefault(); goTo(activeIndex - 1) }
-      else if (event.key === 'ArrowRight') { event.preventDefault(); goTo(activeIndex + 1) }
-      else if (event.key === 'Home') { event.preventDefault(); goTo(0) }
-      else if (event.key === 'End') { event.preventDefault(); goTo(items.length - 1) }
+      if (reel) {
+        const section = sectionRef.current
+        if (!section) return
+        const rect = section.getBoundingClientRect()
+        if (rect.bottom < 96 || rect.top > window.innerHeight - 96) return
+      }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); (horizontal ? goTo : stepReel)(-1) }
+      else if (event.key === 'ArrowRight') { event.preventDefault(); (horizontal ? goTo : stepReel)(1) }
+      else if (event.key === 'Home') { event.preventDefault(); if (horizontal) goTo(0); else reelTo(0) }
+      else if (event.key === 'End') { event.preventDefault(); if (horizontal) goTo(items.length - 1); else reelTo(items.length - 1) }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [horizontal, hasWork, activeIndex, items.length])
+  }, [horizontal, reel, hasWork, activeIndex, items.length])
 
   // Prev / Next jump between panels by scrolling the page to the matching
   // point inside the pinned range, so the buttons, the wheel and the arrow
@@ -165,6 +223,27 @@ export default function WorkIndex({ data }) {
     else window.scrollTo({ top: y, behavior: 'smooth' })
     const heading = document.querySelector(`#work [data-panel-heading="${target}"]`)
     if (heading) heading.focus({ preventScroll: true })
+  }
+
+  // Reel helpers: the mobile track is a real horizontal scroller, so the
+  // controls move it by scroll position, not by page scroll.
+  const reelTo = (index) => {
+    const track = trackRef.current
+    if (!track) return
+    const panel = track.querySelectorAll('.work-panel')[index]
+    if (!panel) return
+    const pad = parseFloat(getComputedStyle(track).scrollPaddingLeft) || 0
+    const left = panel.getBoundingClientRect().left - track.getBoundingClientRect().left + track.scrollLeft - pad
+    track.scrollTo({ left, behavior: 'smooth' })
+  }
+
+  const stepReel = (dir) => {
+    const target = Math.min(items.length - 1, Math.max(0, activeIndex + dir))
+    reelTo(target)
+    const heading = trackRef.current?.querySelector(`[data-panel-heading="${target}"]`)
+    if (heading) {
+      window.setTimeout(() => heading.focus({ preventScroll: true }), 450)
+    }
   }
 
   return (
@@ -208,6 +287,13 @@ export default function WorkIndex({ data }) {
               >
                 {items.map(renderPanel)}
               </div>
+            ) : reel ? (
+              <div
+                ref={trackRef}
+                className={`page-x mt-2 flex snap-x snap-mandatory gap-6 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [scroll-padding-inline:clamp(1.25rem,5vw,5rem)] [&::-webkit-scrollbar]:hidden`}
+              >
+                {items.map(renderPanel)}
+              </div>
             ) : (
               <RevealGroup
                 as="div"
@@ -220,7 +306,7 @@ export default function WorkIndex({ data }) {
           </div>
         )}
 
-        {hasWork && horizontal && (
+        {hasWork && (horizontal || reel) && (
           <div className="page-x flex items-center gap-5 pb-8 pt-4">
             <span
               className="meta shrink-0 text-bone-dim"
@@ -243,7 +329,7 @@ export default function WorkIndex({ data }) {
             <div className="flex shrink-0 gap-3" role="group" aria-label="Project controls">
               <button
                 type="button"
-                onClick={() => goTo(activeItem ? activeIndex - 1 : 0)}
+                onClick={() => (horizontal ? goTo(activeItem ? activeIndex - 1 : 0) : stepReel(activeItem ? -1 : 0))}
                 className="reel-control"
                 aria-label="Previous project"
               >
@@ -251,7 +337,7 @@ export default function WorkIndex({ data }) {
               </button>
               <button
                 type="button"
-                onClick={() => goTo(activeIndex + 1)}
+                onClick={() => (horizontal ? goTo(activeIndex + 1) : stepReel(1))}
                 className="reel-control"
                 aria-label="Next project"
               >

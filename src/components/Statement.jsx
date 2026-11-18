@@ -3,6 +3,7 @@ import { Reveal } from './Reveal'
 import { useReducedMotion } from '../lib/useReducedMotion'
 import { wordReveal } from '../lib/words'
 import { driftStatement } from '../lib/scroll'
+import { storyCamera } from '../lib/camera'
 
 export default function Statement({ data }) {
   const headingRef = useRef(null)
@@ -17,6 +18,14 @@ export default function Statement({ data }) {
     return driftStatement(headingRef.current, sectionRef.current)
   }, [reduced])
 
+  // The statement is its own shot: it pushes in as it reaches the centre of
+  // the viewport, then drifts out as the photo band takes over the take.
+  useLayoutEffect(() => {
+    if (reduced) return
+    if (!sectionRef.current) return
+    return storyCamera(sectionRef.current)
+  }, [reduced])
+
   const words = [
     { text: data.lead, accent: false, tone: 'bone' },
     { text: data.accent, accent: true, tone: 'bone' },
@@ -29,7 +38,7 @@ export default function Statement({ data }) {
   )
 
   return (
-    <section ref={sectionRef} className="page-x py-24 md:py-32 lg:py-40">
+    <section ref={sectionRef} id="statement" data-shot className="page-x py-24 md:py-32 lg:py-40">
       <h2
         ref={headingRef}
         aria-label={`${data.lead} ${data.accent} ${data.tail}`}

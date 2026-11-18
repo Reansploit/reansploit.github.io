@@ -1,8 +1,8 @@
 import { useLayoutEffect, useRef } from 'react'
-import { animate, stagger } from 'animejs'
+import { animate, stagger } from 'motion'
 import { useReducedMotion } from '../lib/useReducedMotion'
 
-const EASE = 'out(3)'
+const EASE = [0.22, 1, 0.36, 1]
 
 function hide(el, x, y) {
   el.style.opacity = '0'
@@ -40,8 +40,8 @@ export function Reveal({ as: Tag = 'div', children, className, delay = 0, y = 22
         opacity: [0, 1],
         translateX: [x, 0],
         translateY: [y, 0],
-        duration: 700,
-        delay,
+        duration: 0.7,
+        delay: delay / 1000,
         ease: EASE,
         onComplete: () => show(el),
       })
@@ -50,7 +50,7 @@ export function Reveal({ as: Tag = 'div', children, className, delay = 0, y = 22
     if (rect.top < window.innerHeight) {
       play()
       return () => {
-        animation?.revert()
+        animation?.cancel()
         show(el)
       }
     }
@@ -67,7 +67,7 @@ export function Reveal({ as: Tag = 'div', children, className, delay = 0, y = 22
 
     return () => {
       io.disconnect()
-      animation?.revert()
+      animation?.cancel()
       show(el)
     }
   }, [reduced, delay, x, y])
@@ -111,8 +111,8 @@ export function RevealGroup({
         opacity: [0, 1],
         translateX: [x, 0],
         translateY: [y, 0],
-        duration: 700,
-        delay: stagger(staggerMs),
+        duration: 0.7,
+        delay: stagger(staggerMs / 1000),
         ease: EASE,
         onComplete: () => showAll(items),
       })
@@ -121,7 +121,7 @@ export function RevealGroup({
     if (rect.top < window.innerHeight) {
       play()
       return () => {
-        animation?.revert()
+        animation?.cancel()
         showAll(items)
       }
     }
@@ -138,7 +138,7 @@ export function RevealGroup({
 
     return () => {
       io.disconnect()
-      animation?.revert()
+      animation?.cancel()
       showAll(items)
     }
   }, [reduced, staggerMs, x, y])

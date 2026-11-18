@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import Nav from './components/Nav'
 import ScrollProgress from './components/ScrollProgress'
 import Hero from './components/Hero'
@@ -8,8 +8,10 @@ import ImageBand from './components/ImageBand'
 import Path from './components/Path'
 import WorkIndex from './components/WorkIndex'
 import Footer from './components/Footer'
+import GuideRail from './components/GuideRail'
 import { site } from './data/site'
 import { refreshOnFonts, createLenis } from './lib/scroll'
+import { storyPan } from './lib/camera'
 import { useReducedMotion } from './lib/useReducedMotion'
 
 export default function App() {
@@ -18,6 +20,14 @@ export default function App() {
   useEffect(() => {
     refreshOnFonts()
   }, [])
+
+  // The page is one continuous take: every shot sways left and back together
+  // as the reader moves, so the scroll reads as a single camera rather than a
+  // stack of separate cuts.
+  useLayoutEffect(() => {
+    if (reduced) return
+    return storyPan(document.querySelectorAll('[data-shot]'))
+  }, [reduced])
 
   // Butter-smooth, momentum-based scroll. Disabled when the user asks for
   // reduced motion, so Lenis never overrides their accessibility choice.
@@ -60,6 +70,7 @@ export default function App() {
 
       <Nav items={site.nav} name={site.hero.name} suffix={site.hero.suffix} />
       <ScrollProgress />
+      <GuideRail />
 
       <main id="main" tabIndex={-1}>
         <Hero data={site.hero} />

@@ -3,12 +3,13 @@ import { Reveal, RevealGroup } from './Reveal'
 import { useReducedMotion } from '../lib/useReducedMotion'
 import { useDevelopingPhoto } from '../lib/useDevelopingPhoto'
 import { driftInfo } from '../lib/scroll'
+import { storyCamera } from '../lib/camera'
 import gsap from 'gsap'
 
 // An inline row photo: sits in the tray until the row scrolls into view, then
 // develops to full tone. The viewfinder frame lifts on hover.
 function InfoPhoto({ src, alt, className }) {
-  const ref = useDevelopingPhoto()
+  const ref = useDevelopingPhoto({ tap: true })
   return (
     <div className={`viewfinder-frame ${className}`}>
       <img
@@ -45,6 +46,7 @@ export default function Info({ data }) {
   const rowRefs = useRef([])
   const hoverRef = useRef(null)
   const imageRef = useRef(null)
+  const cameraRef = useRef(null)
   const reduced = useReducedMotion()
   const pointerFine = usePointerFine()
   const showHover = pointerFine && !reduced
@@ -55,6 +57,14 @@ export default function Info({ data }) {
     if (reduced) return
     if (!rowsRef.current || !sectionRef.current) return
     return driftInfo(rowsRef.current, sectionRef.current)
+  }, [reduced])
+
+  // The Info band is its own shot of the take: label and rows settle into
+  // frame together, so the sticky label never separates from the rows.
+  useLayoutEffect(() => {
+    if (reduced) return
+    if (!cameraRef.current) return
+    return storyCamera(cameraRef.current)
   }, [reduced])
 
   // Each row carries its own photo. On hover-capable pointers the photo
@@ -138,7 +148,11 @@ export default function Info({ data }) {
 
   return (
     <section ref={sectionRef} id="info" className="scroll-mt-24 border-y border-line bg-ink-raised">
-      <div className="page-x grid gap-10 py-20 md:py-28 lg:grid-cols-[minmax(0,0.62fr)_minmax(0,1.38fr)] lg:gap-16 lg:py-32">
+      <div
+        ref={cameraRef}
+        data-shot
+        className="page-x grid gap-10 py-20 md:py-28 lg:grid-cols-[minmax(0,0.62fr)_minmax(0,1.38fr)] lg:gap-16 lg:py-32"
+      >
         <Reveal
           as="h2"
           y={10}

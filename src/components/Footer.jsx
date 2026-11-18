@@ -3,6 +3,8 @@ import { Reveal, RevealGroup } from './Reveal'
 import { Countdown } from './Countdown'
 import { useReducedMotion } from '../lib/useReducedMotion'
 import { wordReveal } from '../lib/words'
+import { storyCamera } from '../lib/camera'
+import { subscribeMarquee, toggleMarquee, isMarqueePaused } from '../lib/marqueeToggle'
 
 function LocalTime({ zone, label }) {
   const [time, setTime] = useState('--:--')
@@ -29,7 +31,11 @@ function LocalTime({ zone, label }) {
 
 function Marquee({ name, suffix }) {
   const reduced = useReducedMotion()
-  const [paused, setPaused] = useState(false)
+  const [paused, setPaused] = useState(isMarqueePaused)
+
+  useEffect(() => {
+    return subscribeMarquee(setPaused)
+  }, [])
 
   return (
     <div className="mt-6 border-t border-line">
@@ -37,7 +43,7 @@ function Marquee({ name, suffix }) {
         <div className="page-x flex justify-end py-3">
           <button
             type="button"
-            onClick={() => setPaused((value) => !value)}
+            onClick={() => toggleMarquee()}
             className="inline-flex min-h-11 items-center border border-line px-3 text-[0.6875rem] uppercase tracking-[0.16em] text-bone-dim transition-colors hover:border-bone hover:text-bone active:bg-ink-raised"
           >
             <span>{paused ? 'Play' : 'Pause'}</span>
@@ -65,14 +71,27 @@ function Marquee({ name, suffix }) {
 
 export default function Footer({ data, identity }) {
   const titleRef = useRef(null)
+  const footerRef = useRef(null)
   const reduced = useReducedMotion()
 
   useLayoutEffect(() => wordReveal(titleRef.current, reduced), [reduced])
 
+  // The closing shot: the footer settles into frame as the page ends.
+  useLayoutEffect(() => {
+    if (reduced) return
+    if (!footerRef.current) return
+    return storyCamera(footerRef.current)
+  }, [reduced])
+
   const words = data.title.split(' ').filter(Boolean)
 
   return (
-    <footer id="contact" className="scroll-mt-24 border-t border-line">
+    <footer
+      id="contact"
+      ref={footerRef}
+      data-shot
+      className="scroll-mt-24 border-t border-line pb-36 lg:pb-0"
+    >
       <div className="page-x pt-20 md:pt-28">
         <div className="grid gap-12 md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] md:gap-16">
           <div>
@@ -137,7 +156,7 @@ export default function Footer({ data, identity }) {
             <p className="text-xs leading-relaxed text-bone-dim">
               {data.colophon?.updated ? `Updated ${data.colophon.updated}` : data.note}
             </p>
-            <Countdown target={data.countdown?.target} zone={data.clock.zone} label="Until 2028" />
+            <Countdown target={data.countdown?.target} zone={data.clock.zone} label="Until 2029" />
           </div>
           <div className="flex items-center gap-4 sm:justify-end">
             <a
