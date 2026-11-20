@@ -122,11 +122,15 @@ export function driftPortrait(block, trigger) {
 export function driftImage(image, trigger) {
   const ctx = gsap.context(() => {
     gsap.set(image, { scale: 1.15 })
+    // The frame is a breath, not a pan: the photo swells a few percent as it
+    // crosses the viewport, so the wide shot pushes in instead of only
+    // sliding. Scale stays >= 1.15 so the oversized image never shows an edge.
     gsap.fromTo(
       image,
-      { yPercent: -6 },
+      { yPercent: -6, scale: 1.15 },
       {
         yPercent: 6,
+        scale: 1.22,
         ease: 'none',
         scrollTrigger: {
           trigger,
@@ -151,6 +155,26 @@ export function driftStatement(block, trigger) {
         start: 'top bottom',
         end: 'bottom top',
         scrub: 0.5,
+      },
+    })
+  })
+
+  return () => ctx.revert()
+}
+
+// The hero metadata is the most distant layer of the first screen: it lifts
+// off the page as the name and portrait drift in the opposite direction, so
+// the opening shot separates into three planes instead of sliding as one.
+export function driftMeta(block, trigger) {
+  const ctx = gsap.context(() => {
+    gsap.to(block, {
+      y: -14,
+      ease: 'none',
+      scrollTrigger: {
+        trigger,
+        start: 'top top',
+        end: 'bottom top',
+        scrub: true,
       },
     })
   })

@@ -52,12 +52,12 @@ function Marquee({ name, suffix }) {
         </div>
       )}
 
-      <div className="marquee overflow-hidden pb-4" data-paused={paused} aria-hidden="true">
+      <div className="marquee overflow-hidden pb-4 md:pb-5" data-paused={paused} aria-hidden="true">
         <div className="marquee-track">
           {[0, 1].map((copy) => (
             <span
               key={copy}
-              className="whitespace-nowrap pb-[0.22em] pr-10 font-display text-[15vw] leading-[0.8]"
+              className="whitespace-nowrap pb-[0.22em] pr-10 font-display text-[15vw] leading-[0.8] md:pr-12 md:pb-[0.24em]"
             >
               {name}
               <span className="text-marigold">{suffix}</span>

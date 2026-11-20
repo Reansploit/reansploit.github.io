@@ -26,7 +26,7 @@ export function wordReveal(heading, reduced, delay = 0) {
       opacity: [0, 1],
       translateY: [26, 0],
       duration: 0.65,
-      delay: stagger(0.07),
+      delay: stagger(0.07, delay / 1000),
       ease: [0.22, 1, 0.36, 1],
       onComplete: reset,
     })

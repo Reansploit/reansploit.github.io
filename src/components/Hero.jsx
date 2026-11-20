@@ -3,7 +3,7 @@ import { animate } from 'motion'
 import gsap from 'gsap'
 import { useReducedMotion } from '../lib/useReducedMotion'
 import { useDevelopingPhoto } from '../lib/useDevelopingPhoto'
-import { driftHero, driftPortrait } from '../lib/scroll'
+import { driftHero, driftMeta, driftPortrait } from '../lib/scroll'
 import { storyCamera } from '../lib/camera'
 
 export default function Hero({ data }) {
@@ -93,7 +93,7 @@ export default function Hero({ data }) {
 
   // The portrait wipes open from its bottom edge, the same horizon the name
   // rises from. GSAP owns this one timed entrance because clip-path
-  // interpolation is CSSPlugin's job; Anime.js keeps the text entrances.
+  // interpolation is CSSPlugin's job; the text entrances run on motion.
   useLayoutEffect(() => {
     if (reduced) return
 
@@ -126,6 +126,15 @@ export default function Hero({ data }) {
     if (reduced) return
     if (!figureRef.current || !sectionRef.current) return
     return driftPortrait(figureRef.current, sectionRef.current)
+  }, [reduced])
+
+  // The metadata row is the most distant layer of the first screen: it lifts
+  // off the page as the name and portrait drift in the opposite direction, so
+  // the opening shot separates into three planes instead of sliding as one.
+  useLayoutEffect(() => {
+    if (reduced) return
+    if (!metaRef.current || !sectionRef.current) return
+    return driftMeta(metaRef.current, sectionRef.current)
   }, [reduced])
 
   // Pointer-reactive parallax: the portrait and the statement answer the
@@ -176,8 +185,9 @@ export default function Hero({ data }) {
   useLayoutEffect(() => {
     if (reduced) return
     const section = sectionRef.current
+    if (!section) return
     const letters = Array.from(section.querySelectorAll('h1 [data-letter]'))
-    if (!section || !letters.length) return
+    if (!letters.length) return
     // Touch taps fire pointerenter, which would make the name judder on tap.
     if (!window.matchMedia('(pointer: fine)').matches) return
 

@@ -169,7 +169,7 @@ export const site = {
     colophon: {
       updated: '2026-11-18',
       typefaces: 'Instrument Serif and Archivo Variable',
-      stack: 'React 19, Vite, Tailwind CSS, GSAP with ScrollTrigger, Lenis, Anime.js',
+      stack: 'React 19, Vite, Tailwind CSS, GSAP with ScrollTrigger, Lenis, motion',
       photos: 'Personal photography; placeholder photos from picsum.photos until replaced.',
     },
     backToTop: 'Back to top',
